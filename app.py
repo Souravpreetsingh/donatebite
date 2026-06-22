@@ -80,11 +80,13 @@ def create_app():
     # ── Health Check ──
     @app.route('/health')
     def health():
+        supabase_url = app.config.get('SUPABASE_URL', '')
         return jsonify({
             'status': 'ok',
             'app': 'Nourish Collective',
             'env': env,
-            'supabase_url_configured': bool(app.config.get('SUPABASE_URL') and 'your-project-id' not in app.config['SUPABASE_URL']),
+            'supabase_url_configured': bool(supabase_url and 'your-project-id' not in supabase_url),
+            'supabase_url_prefix': supabase_url[:20] if supabase_url else 'MISSING',
         })
 
     # ── Error Handlers ──
