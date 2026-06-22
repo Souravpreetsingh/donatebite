@@ -10,6 +10,9 @@
 
   var donationIdVal = donationId[1];
   var currentUserId = parseInt(chatMessages.dataset.userId || '0');
+  var otherUserName = chatMessages.dataset.otherName || 'Someone';
+  var lastMessageCount = chatMessages.querySelectorAll('.message-bubble').length;
+  var toasts = document.getElementById('toast-container');
 
   window.sendMessage = function (e, did) {
     e.preventDefault();
@@ -42,12 +45,34 @@
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
+  function showToast(message, senderName) {
+    if (!toasts) return;
+    var toast = document.createElement('div');
+    toast.className = 'toast show align-items-center text-bg-dark border-0 mb-2';
+    toast.role = 'alert';
+    toast.innerHTML =
+      '<div class="d-flex">' +
+      '<div class="toast-body">' +
+      '<strong class="me-auto">' + escapeHtml(senderName) + '</strong><br>' +
+      '<small>' + escapeHtml(message) + '</small>' +
+      '</div>' +
+      '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+      '</div>';
+    toasts.appendChild(toast);
+    setTimeout(function () {
+      toast.classList.remove('show');
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 4000);
+  }
+
   function pollMessages() {
     fetch('/chat/' + donationIdVal + '/messages')
       .then(function (r) { return r.json(); })
       .then(function (messages) {
-        var currentCount = chatMessages.querySelectorAll('.message-bubble').length;
-        if (messages.length !== currentCount || currentCount === 0) {
+        var newCount = messages.length;
+        if (newCount !== lastMessageCount || lastMessageCount === 0) {
+          var wasEmpty = lastMessageCount === 0;
+          lastMessageCount = newCount;
           chatMessages.innerHTML = '';
           if (messages.length === 0) {
             chatMessages.innerHTML =
@@ -69,6 +94,12 @@
             });
           }
           scrollToBottom();
+          if (!wasEmpty && messages.length > 0) {
+            var lastMsg = messages[messages.length - 1];
+            if (lastMsg.sender_id !== currentUserId) {
+              showToast(lastMsg.message, otherUserName);
+            }
+          }
         }
       })
       .catch(function () {});
@@ -81,5 +112,5 @@
   }
 
   scrollToBottom();
-  setInterval(pollMessages, 3000);
+  setInterval(pollMessages, 2000);
 })();

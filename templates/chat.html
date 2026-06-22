@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <div id="chat-messages" class="flex-grow-1 p-3" style="overflow-y: auto; background: #f8f9ff;" data-user-id="{{ current_user.id }}">
+    <div id="chat-messages" class="flex-grow-1 p-3" style="overflow-y: auto; background: #f8f9ff;" data-user-id="{{ current_user.id }}" data-other-name="{{ other_user.full_name if other_user else 'Someone' }}">
       {% if messages %}
         {% for m in messages %}
         <div class="d-flex mb-3 {% if m.sender_id == current_user.id %}justify-content-end{% endif %}">
@@ -124,6 +124,7 @@
   </div>
 </div>
 {% endif %}
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;"></div>
 {% endblock %}
 
 {% block scripts %}
