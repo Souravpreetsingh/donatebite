@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+{% block title %}Messages — Nourish Collective{% endblock %}
+{% block content %}
+<div class="row g-0" style="height: calc(100vh - 100px);">
+  <div class="col-4 col-md-3 border-end bg-white" style="overflow-y: auto;">
+    <div class="p-3 border-bottom">
+      <h5 class="fw-bold mb-0"><i class="bi bi-chat-dots me-2"></i>Messages</h5>
+    </div>
+    {% if conversations %}
+      {% for c in conversations %}
+      <a href="{{ url_for('chat.conversation', donation_id=c.donation_id) }}"
+         class="text-decoration-none {% if active_conversation and active_conversation.id == c.donation_id %}bg-light{% endif %}">
+        <div class="p-3 border-bottom conversation-item {% if active_conversation and active_conversation.id == c.donation_id %}active{% endif %}">
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar-placeholder bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:40px;height:40px;font-weight:600;font-size:0.9rem;">
+              {{ c.other_user.full_name[:1].upper() if c.other_user else '?' }}
+            </div>
+            <div class="flex-grow-1 min-width-0">
+              <div class="fw-semibold small text-dark">{{ c.other_user.full_name if c.other_user else 'Unknown' }}</div>
+              <div class="text-muted small text-truncate">{{ c.donation.food_name }}</div>
+              <div class="text-muted small text-truncate">{{ c.last_message }}</div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    {% else %}
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+        <small>No conversations yet.</small>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-8 col-md-9 d-flex flex-column">
+    {% if active_conversation and other_user %}
+    <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="avatar-placeholder bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+             style="width:40px;height:40px;font-weight:600;font-size:0.9rem;">
+          {{ other_user.full_name[:1].upper() }}
+        </div>
+        <div>
+          <div class="fw-semibold small">{{ other_user.full_name }}</div>
+          <div class="text-muted small">{{ active_conversation.food_name }}</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-success btn-sm rounded-pill" onclick="toggleCallModal()">
+          <i class="bi bi-telephone me-1"></i>Call
+        </button>
+        <a href="{{ url_for('donor.dashboard') if current_user.is_donor() else url_for('ngo.dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+      </div>
+    </div>
+
+    <div id="chat-messages" class="flex-grow-1 p-3" style="overflow-y: auto; background: #f8f9ff;" data-user-id="{{ current_user.id }}">
+      {% if messages %}
+        {% for m in messages %}
+        <div class="d-flex mb-3 {% if m.sender_id == current_user.id %}justify-content-end{% endif %}">
+          <div class="message-bubble {% if m.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+            <div class="small">{{ m.message }}</div>
+            <div class="small text-muted" style="font-size:0.65rem;">{{ m.created_at[:16] }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="h-100 d-flex align-items-center justify-content-center">
+          <div class="text-center text-muted">
+            <i class="bi bi-chat-square-text fs-1 d-block mb-2"></i>
+            <small>No messages yet. Say hello!</small>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="p-3 border-top bg-white">
+      <form id="message-form" class="d-flex gap-2" onsubmit="sendMessage(event, {{ active_conversation.id }})">
+        <input type="text" id="message-input" class="form-control form-control-sm rounded-pill" placeholder="Type a message..." required autocomplete="off">
+        <button type="submit" class="btn btn-success btn-sm rounded-pill">
+          <i class="bi bi-send"></i>
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="h-100 d-flex align-items-center justify-content-center">
+      <div class="text-center text-muted">
+        <i class="bi bi-chat-square-text fs-1 d-block mb-3"></i>
+        <h5 class="fw-semibold">Your Messages</h5>
+        <p class="small">Select a conversation from the left to start chatting.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if active_conversation and other_user %}
+<!-- Call Modal -->
+<div class="modal fade" id="callModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+      <div class="modal-body">
+        <div id="call-status">
+          <div class="avatar-placeholder bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+               style="width:80px;height:80px;font-size:2rem;">
+            {{ other_user.full_name[:1].upper() }}
+          </div>
+          <h5 id="call-partner-name" class="fw-semibold">{{ other_user.full_name }}</h5>
+          <p id="call-status-text" class="text-muted small">Preparing call...</p>
+          <div id="call-timer" class="text-success fw-bold d-none">00:00</div>
+        </div>
+        <div class="d-flex justify-content-center gap-3 mt-4">
+          <button id="call-end-btn" class="btn btn-danger rounded-circle" style="width:60px;height:60px;" onclick="endCall()" disabled>
+            <i class="bi bi-telephone-x fs-4"></i>
+          </button>
+          <button id="call-start-btn" class="btn btn-success rounded-circle" style="width:60px;height:60px;" onclick="startCall({{ active_conversation.id }}, {{ current_user.id }})">
+            <i class="bi bi-telephone fs-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/call.js') }}"></script>
+{% endblock %}

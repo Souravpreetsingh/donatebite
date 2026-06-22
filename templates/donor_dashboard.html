@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block title %}Donor Dashboard — Nourish Collective{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Welcome, {{ current_user.full_name }}</h4>
+    <p class="text-muted small mb-0">Here is your impact overview.</p>
+  </div>
+  <a href="{{ url_for('donor.add_donation') }}" class="btn btn-success rounded-pill">
+    <i class="bi bi-plus-lg me-1"></i>Add New Donation
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon bg-success bg-opacity-10 text-success mb-2"><i class="bi bi-heart"></i></div>
+      <div class="stat-number">{{ total_lbs }}</div>
+      <div class="stat-label">Total Donations (lbs)</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon bg-warning bg-opacity-10 text-warning mb-2"><i class="bi bi-clock"></i></div>
+      <div class="stat-number">{{ pending_count }}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary bg-opacity-10 text-primary mb-2"><i class="bi bi-check-circle"></i></div>
+      <div class="stat-number">{{ completed_count }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h5 class="fw-semibold mb-0"><i class="bi bi-clock-history me-2"></i>Donation History</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Food Item</th>
+          <th>Quantity</th>
+          <th>Date Posted</th>
+          <th>Status</th>
+          <th>Pickup Location</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if donations %}
+          {% for d in donations %}
+          <tr>
+            <td class="fw-medium">{{ d.food_name }}</td>
+            <td>{{ d.quantity }}</td>
+            <td class="text-muted">{{ d.created_at[:10] }}</td>
+            <td>
+              <span class="badge rounded-pill
+                {% if d.status == 'available' %}bg-success bg-opacity-10 text-success
+                {% elif d.status == 'accepted' %}bg-primary bg-opacity-10 text-primary
+                {% elif d.status == 'in_transit' %}bg-warning bg-opacity-10 text-warning
+                {% elif d.status == 'delivered' %}bg-secondary bg-opacity-10 text-secondary
+                {% else %}bg-light text-muted{% endif %}">
+                {{ d.status|replace('_', ' ')|title }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ d.pickup_location }}</td>
+            <td>
+              {% if d.status in ('accepted', 'in_transit', 'delivered') %}
+              <a href="{{ url_for('chat.conversation', donation_id=d.id) }}" class="btn btn-outline-success btn-sm rounded-pill">
+                <i class="bi bi-chat-dots me-1"></i>Chat
+              </a>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="bi bi-inbox me-2"></i>No donations yet.
+              <a href="{{ url_for('donor.add_donation') }}" class="text-success">Add your first one!</a>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

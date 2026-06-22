@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Log In — Nourish Collective{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="card border-0 shadow-sm p-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-tree-fill text-success fs-1"></i>
+        <h4 class="fw-bold mt-2">Welcome Back</h4>
+        <p class="text-muted small">Log in to continue your impact.</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Email Address</label>
+          <input type="email" class="form-control" name="email" placeholder="name@organization.org" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Password</label>
+          <input type="password" class="form-control" name="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required />
+        </div>
+        <button type="submit" class="btn btn-success w-100 rounded-pill">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Log In
+        </button>
+      </form>
+
+      <div class="text-center mt-4 pt-3 border-top">
+        <p class="small text-muted">
+          Don't have an account?
+          <a href="{{ url_for('auth.register') }}" class="text-success fw-semibold">Sign up</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-success" href="{{ url_for('auth.index') }}">
+      <i class="bi bi-tree-fill me-2"></i>Nourish Collective
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.index') }}">Home</a></li>
+      </ul>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-success btn-sm rounded-pill px-4">Log In</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-success btn-sm rounded-pill px-4">Get Started</a>
+      </div>
+    </div>
+  </div>
+</nav>

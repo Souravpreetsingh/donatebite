@@ -1,0 +1,90 @@
+<div class="sidebar border-end bg-white">
+  <div class="p-3 border-bottom">
+    <a href="{{ url_for('auth.home_redirect') }}" class="d-flex align-items-center text-decoration-none">
+      <i class="bi bi-tree-fill text-success fs-4 me-2"></i>
+      <span class="fw-bold text-success">Nourish Portal</span>
+    </a>
+  </div>
+
+  <div class="p-3">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="avatar-placeholder bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width:42px;height:42px;font-weight:600;font-size:1rem;">
+        {{ current_user.full_name[:1].upper() }}
+      </div>
+      <div>
+        <div class="fw-semibold small">{{ current_user.full_name }}</div>
+        <span class="badge bg-{% if current_user.is_donor() %}success{% elif current_user.is_ngo() %}primary{% else %}danger{% endif %} bg-opacity-10 text-dark rounded-pill" style="font-size:0.65rem;">
+          {{ current_user.role|upper }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav flex-column px-2">
+    {% if current_user.is_donor() %}
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if request.path == '/donor/dashboard' %}active{% endif %}" href="{{ url_for('donor.dashboard') }}">
+          <i class="bi bi-grid me-2"></i>Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if request.path == '/donor/add' %}active{% endif %}" href="{{ url_for('donor.add_donation') }}">
+          <i class="bi bi-plus-circle me-2"></i>Add Donation
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/chat' in request.path %}active{% endif %}" href="{{ url_for('chat.conversations') }}">
+          <i class="bi bi-chat-dots me-2"></i>Messages
+        </a>
+      </li>
+    {% elif current_user.is_ngo() %}
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if request.path == '/ngo/dashboard' %}active{% endif %}" href="{{ url_for('ngo.dashboard') }}">
+          <i class="bi bi-grid me-2"></i>Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if request.path == '/ngo/available' %}active{% endif %}" href="{{ url_for('ngo.available') }}">
+          <i class="bi bi-box-seam me-2"></i>Available Donations
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/chat' in request.path %}active{% endif %}" href="{{ url_for('chat.conversations') }}">
+          <i class="bi bi-chat-dots me-2"></i>Messages
+        </a>
+      </li>
+    {% elif current_user.is_admin() %}
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if request.path == '/admin/dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+          <i class="bi bi-grid me-2"></i>Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/admin/users' in request.path %}active{% endif %}" href="{{ url_for('admin.manage_users') }}">
+          <i class="bi bi-people me-2"></i>Users
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/admin/donations' in request.path %}active{% endif %}" href="{{ url_for('admin.manage_donations') }}">
+          <i class="bi bi-box me-2"></i>Donations
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/chat' in request.path %}active{% endif %}" href="{{ url_for('chat.conversations') }}">
+          <i class="bi bi-chat-dots me-2"></i>Messages
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link sidebar-link {% if '/admin/logs' in request.path %}active{% endif %}" href="{{ url_for('admin.view_logs') }}">
+          <i class="bi bi-journal me-2"></i>Activity Logs
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+
+  <div class="mt-auto p-3 border-top">
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm w-100">
+      <i class="bi bi-box-arrow-right me-1"></i>Logout
+    </a>
+  </div>
+</div>

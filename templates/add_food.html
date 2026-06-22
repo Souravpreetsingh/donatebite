@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block title %}Add Donation — Nourish Collective{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h4 class="fw-bold mb-1">Register a Donation</h4>
+  <p class="text-muted small">Log fresh or packaged items to route to community partners.</p>
+</div>
+
+<form method="POST" action="{{ url_for('donor.add_donation') }}" enctype="multipart/form-data" class="row g-4">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm p-4">
+      <h5 class="fw-semibold mb-3"><i class="bi bi-egg text-success me-2"></i>Food Details</h5>
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Food Name</label>
+          <input type="text" class="form-control" name="food_name" placeholder="e.g., Sourdough Loaves, Mixed Vegetables" required />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Food Type</label>
+          <select class="form-select" name="food_type" required>
+            <option value="">Select Category</option>
+            <option value="produce">Fresh Produce</option>
+            <option value="bakery">Bakery &amp; Bread</option>
+            <option value="prepared">Prepared Meals</option>
+            <option value="dairy">Dairy &amp; Eggs</option>
+            <option value="dry">Dry Pantry Goods</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Quantity (Approx.)</label>
+          <input type="text" class="form-control" name="quantity" placeholder="e.g., 20 lbs, 15 boxes" required />
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-4 mt-4">
+      <h5 class="fw-semibold mb-3"><i class="bi bi-truck text-primary me-2"></i>Logistics &amp; Timing</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Preparation Time</label>
+          <input type="datetime-local" class="form-control" name="preparation_time" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold text-danger">Expiry Time *</label>
+          <input type="datetime-local" class="form-control" name="expiry_time" required />
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Pickup Location</label>
+          <input type="text" class="form-control" name="pickup_location" placeholder="Enter facility or address" required />
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-4 mt-4">
+      <label class="form-label small fw-semibold">Additional Handling Notes</label>
+      <textarea class="form-control" name="notes" rows="3" placeholder="e.g., Needs refrigeration, fragile packaging..."></textarea>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm p-4">
+      <h5 class="fw-semibold mb-3"><i class="bi bi-camera text-success me-2"></i>Verification Image</h5>
+      <div class="border-2 border-dashed rounded-3 p-4 text-center bg-light" id="dropZone">
+        <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+        <p class="small text-muted mt-2 mb-1">Click or drag to upload</p>
+        <p class="small text-muted">JPG, PNG up to 5MB</p>
+        <input type="file" class="form-control form-control-sm" name="image" accept="image/*" id="imageInput" />
+      </div>
+      <div id="imagePreview" class="mt-2 d-none">
+        <img class="img-fluid rounded" id="previewImg" />
+      </div>
+    </div>
+
+    <div class="card border-0 bg-success bg-opacity-10 p-4 mt-4">
+      <h6 class="fw-semibold"><i class="bi bi-shield-check text-success me-1"></i>Safety Standards</h6>
+      <ul class="small text-muted ps-3 mb-0">
+        <li>Ensure packaging is intact and sealed.</li>
+        <li>Verify temperature constraints for perishables.</li>
+        <li>Provide accurate expiry estimates.</li>
+      </ul>
+    </div>
+
+    <button type="submit" class="btn btn-success w-100 mt-4 rounded-pill py-2">
+      <i class="bi bi-send me-2"></i>Submit Donation
+    </button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('imageInput')?.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      document.getElementById('previewImg').src = ev.target.result;
+      document.getElementById('imagePreview').classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+  }
+});
+</script>
+{% endblock %}
