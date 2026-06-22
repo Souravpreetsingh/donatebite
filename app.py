@@ -37,7 +37,13 @@ def create_app():
     logging.basicConfig(level=logging.INFO)
     validate_config(app.logger)
 
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except OSError:
+        temp_upload = os.path.join('/tmp', 'uploads')
+        os.makedirs(temp_upload, exist_ok=True)
+        app.config['UPLOAD_FOLDER'] = temp_upload
+        app.logger.warning('Using /tmp/uploads for file uploads (read-only fs detected)')
 
     login_manager = LoginManager()
     login_manager.init_app(app)
