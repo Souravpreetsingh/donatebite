@@ -265,6 +265,26 @@ class SupabaseService:
         convos.sort(key=lambda c: c['last_message_time'], reverse=True)
         return convos
 
+    # ── Active Calls ─────────────────────────────────────
+
+    @classmethod
+    def start_call(cls, donation_id, caller_id, peer_id):
+        c = cls.get_client()
+        cls.end_call(donation_id)
+        data = {'donation_id': donation_id, 'caller_id': caller_id, 'peer_id': peer_id}
+        c.table('active_calls').insert(data).execute()
+
+    @classmethod
+    def get_active_call(cls, donation_id):
+        c = cls.get_client()
+        r = c.table('active_calls').select('*').eq('donation_id', donation_id).maybe_single().execute()
+        return r.data if r.data else None
+
+    @classmethod
+    def end_call(cls, donation_id):
+        c = cls.get_client()
+        c.table('active_calls').delete().eq('donation_id', donation_id).execute()
+
     # ── Admin Logs ────────────────────────────────────────
 
     @classmethod

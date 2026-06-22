@@ -112,6 +112,19 @@ CREATE TABLE admin_logs (
     action_time  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ═════════════════════════════════════════════════════════════
+-- 7.  ACTIVE CALLS (ephemeral; used for WebRTC signaling)
+-- ═════════════════════════════════════════════════════════════
+CREATE TABLE active_calls (
+    id            BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    donation_id   BIGINT NOT NULL REFERENCES donations(id) ON DELETE CASCADE,
+    caller_id     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    peer_id       TEXT NOT NULL,
+    started_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_active_calls_donation ON active_calls(donation_id);
+
 CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id ON admin_logs(admin_id);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_time     ON admin_logs(action_time DESC);
 

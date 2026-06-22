@@ -5,7 +5,6 @@
   var timerInterval = null;
   var seconds = 0;
   var donationId = null;
-  var isInitiator = false;
 
   var callStatus = document.getElementById('call-status-text');
   var callTimer = document.getElementById('call-timer');
@@ -16,101 +15,95 @@
   if (pathMatch) donationId = parseInt(pathMatch[1]);
   if (!donationId) return;
 
-  var peer = new Peer(undefined, { debug: 2 });
+  var peer = new Peer(undefined, { debug: 0 });
 
   peer.on('open', function () {
-    if (!donationId) return;
-    pollInterval = setInterval(function () {
-      fetch('/call/' + donationId + '/check')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.active && data.peer_id && !isInitiator && !currentCall) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-            if (confirm('Incoming voice call. Accept?')) {
-              joinCall(data.peer_id);
-            }
-          }
-        })
-        .catch(function () {});
-    }, 3000);
+    watchForCalls();
   });
 
   peer.on('call', function (incomingCall) {
     if (currentCall) { incomingCall.close(); return; }
-    if (isInitiator && incomingCall) {
-      incomingCall.answer(localStream);
-      setupCall(incomingCall);
-      return;
-    }
-    if (confirm('Incoming voice call. Accept?')) {
-      toggleCallModal();
+    stopWatching();
+    toggleCallModal();
+    callStatus.textContent = 'Incoming call...';
+    callStartBtn.disabled = true;
+    callEndBtn.disabled = false;
+    incomingCall.answer(localStream || null);
+    if (!localStream) {
       navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function (stream) {
-          localStream = stream;
-          incomingCall.answer(stream);
-          setupCall(incomingCall);
+        .then(function (s) {
+          localStream = s;
+          incomingCall.answer(s);
         })
-        .catch(function () { callStatus.textContent = 'Microphone denied'; });
-    } else {
-      incomingCall.close();
+        .catch(function () { callStatus.textContent = 'Mic blocked'; });
     }
+    setupCall(incomingCall);
   });
 
   peer.on('error', function () {});
 
-  window.toggleCallModal = function () {
-    var modal = new bootstrap.Modal(document.getElementById('callModal'));
-    modal.show();
-  };
-
-  function joinCall(remotePeerId) {
-    isInitiator = false;
-    callStartBtn.disabled = true;
-    callEndBtn.disabled = false;
-    callStatus.textContent = 'Connecting...';
-    toggleCallModal();
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(function (stream) {
-        localStream = stream;
-        callStatus.textContent = 'Calling...';
-        var call = peer.call(remotePeerId, stream);
-        setupCall(call);
-      })
-      .catch(function () {
-        callStatus.textContent = 'Microphone access denied';
-        resetCallUI();
-      });
+  function watchForCalls() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(function () {
+      fetch('/call/' + donationId + '/check')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.active && data.peer_id && !currentCall) {
+            stopWatching();
+            toggleCallModal();
+            callStatus.textContent = 'Incoming call...';
+            callStartBtn.disabled = true;
+            callEndBtn.disabled = false;
+            navigator.mediaDevices.getUserMedia({ audio: true })
+              .then(function (stream) {
+                localStream = stream;
+                callStatus.textContent = 'Connecting...';
+                var call = peer.call(data.peer_id, stream);
+                setupCall(call);
+              })
+              .catch(function () { callStatus.textContent = 'Mic blocked'; });
+          }
+        })
+        .catch(function () {});
+    }, 2000);
   }
 
-  window.startCall = function (did, uid) {
+  function stopWatching() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  }
+
+  window.toggleCallModal = function () {
+    var m = new bootstrap.Modal(document.getElementById('callModal'));
+    m.show();
+  };
+
+  function getMyPeerId() {
+    if (peer && peer.id) return Promise.resolve(peer.id);
+    return new Promise(function (resolve) {
+      peer.on('open', function (id) { resolve(id); });
+    });
+  }
+
+  window.startCall = function (did) {
     donationId = did;
-    isInitiator = true;
+    stopWatching();
     callStartBtn.disabled = true;
     callEndBtn.disabled = false;
     callStatus.textContent = 'Requesting microphone...';
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(function (stream) {
         localStream = stream;
-        callStatus.textContent = 'Waiting for other person...';
-
-        if (!peer || !peer.id) {
-          peer = new Peer(undefined, { debug: 2 });
-          return new Promise(function (resolve) {
-            peer.on('open', function () { resolve(); });
-          });
-        }
+        callStatus.textContent = 'Connecting...';
+        return getMyPeerId();
       })
-      .then(function () {
+      .then(function (myId) {
+        callStatus.textContent = 'Ringing...';
         fetch('/call/' + donationId + '/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ peer_id: peer.id })
+          body: JSON.stringify({ peer_id: myId })
         });
-        callStatus.textContent = 'Ringing...';
       })
       .catch(function () {
         callStatus.textContent = 'Microphone access denied';
@@ -138,9 +131,8 @@
   window.endCall = function () {
     if (currentCall) { currentCall.close(); currentCall = null; }
     if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     stopTimer();
-    isInitiator = false;
+    stopWatching();
     fetch('/call/' + donationId + '/end', { method: 'POST' }).catch(function () {});
     callStatus.textContent = 'Call ended';
     resetCallUI();
@@ -160,6 +152,7 @@
   }
 
   function resetCallUI() {
+    watchForCalls();
     callStartBtn.disabled = false;
     callEndBtn.disabled = true;
     if (callTimer) callTimer.classList.add('d-none');

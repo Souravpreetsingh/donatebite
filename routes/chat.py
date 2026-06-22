@@ -4,8 +4,6 @@ from services import SupabaseService
 
 chat_bp = Blueprint('chat', __name__)
 
-active_calls = {}
-
 @chat_bp.route('/chat')
 @login_required
 def conversations():
@@ -105,22 +103,28 @@ def start_call(donation_id):
     peer_id = data.get('peer_id')
     if not peer_id:
         return jsonify({'error': 'peer_id required'}), 400
-    active_calls[donation_id] = {
-        'caller_id': current_user.id,
-        'peer_id': peer_id,
-    }
-    return jsonify({'success': True})
+    try:
+        SupabaseService.start_call(donation_id, current_user.id, peer_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @chat_bp.route('/call/<int:donation_id>/check')
 @login_required
 def check_call(donation_id):
-    call = active_calls.get(donation_id)
-    if call and call['caller_id'] != current_user.id:
-        return jsonify({'active': True, 'peer_id': call['peer_id']})
-    return jsonify({'active': False})
+    try:
+        call = SupabaseService.get_active_call(donation_id)
+        if call and call['caller_id'] != current_user.id:
+            return jsonify({'active': True, 'peer_id': call['peer_id']})
+        return jsonify({'active': False})
+    except Exception as e:
+        return jsonify({'active': False})
 
 @chat_bp.route('/call/<int:donation_id>/end', methods=['POST'])
 @login_required
 def end_call(donation_id):
-    active_calls.pop(donation_id, None)
-    return jsonify({'success': True})
+    try:
+        SupabaseService.end_call(donation_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
